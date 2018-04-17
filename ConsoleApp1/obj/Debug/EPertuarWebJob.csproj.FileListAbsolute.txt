@@ -1,0 +1,7 @@
+C:\Users\okito\source\repos\EPertuarWebJob\ConsoleApp1\bin\Debug\ConsoleApp1.exe.config
+C:\Users\okito\source\repos\EPertuarWebJob\ConsoleApp1\bin\Debug\ConsoleApp1.exe
+C:\Users\okito\source\repos\EPertuarWebJob\ConsoleApp1\bin\Debug\ConsoleApp1.pdb
+C:\Users\okito\source\repos\EPertuarWebJob\ConsoleApp1\obj\Debug\EPertuarWebJob.csprojResolveAssemblyReference.cache
+C:\Users\okito\source\repos\EPertuarWebJob\ConsoleApp1\obj\Debug\EPertuarWebJob.csproj.CoreCompileInputs.cache
+C:\Users\okito\source\repos\EPertuarWebJob\ConsoleApp1\obj\Debug\ConsoleApp1.exe
+C:\Users\okito\source\repos\EPertuarWebJob\ConsoleApp1\obj\Debug\ConsoleApp1.pdb
