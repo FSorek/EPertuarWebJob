@@ -2,19 +2,21 @@
 using System;
 using System.Collections.Generic;
 using J = Newtonsoft.Json.JsonPropertyAttribute;
+using System.Globalization;
+using Newtonsoft.Json.Converters;
 
 namespace EPertuarWebJob.Data.Access
 {
     public partial class Multikino
     {
-        [J("films")] public List<MultiFilm> Films { get; set; }
+        [J("films")] public List<MultikinoFilm> Films { get; set; }
         [J("cdate")] public string Cdate { get; set; }
         [J("SiteRootPath")] public string SiteRootPath { get; set; }
         [J("Site")] public string Site { get; set; }
         [J("Lang")] public string Lang { get; set; }
     }
 
-    public partial class MultiFilm
+    public partial class MultikinoFilm
     {
         [J("original_s_count")] public long OriginalSCount { get; set; }
         [J("sortable")] public long Sortable { get; set; }
@@ -52,17 +54,19 @@ namespace EPertuarWebJob.Data.Access
         [J("rank_votes")] public string RankVotes { get; set; }
         [J("rank_value")] public string RankValue { get; set; }
         [J("promo_labels")] public PromoLabels PromoLabels { get; set; }
-        [J("ReleaseDate")] public DateTime ReleaseDate { get; set; }
+        [J("ReleaseDate")] public System.DateTimeOffset ReleaseDate { get; set; }
         [J("type")] public string Type { get; set; }
         [J("wantsee")] public string Wantsee { get; set; }
         [J("showwantsee")] public bool Showwantsee { get; set; }
         [J("newsletterurl")] public string Newsletterurl { get; set; }
+        [J("always_in_QB")] public bool AlwaysInQb { get; set; }
+        [J("priority_value")] public long PriorityValue { get; set; }
     }
 
     public partial class Categories
     {
         [J("names")] public List<CategoriesName> Names { get; set; }
-        [J("active")]  public bool Active { get; set; }
+        [J("active")] public bool Active { get; set; }
     }
 
     public partial class CategoriesName
@@ -98,11 +102,11 @@ namespace EPertuarWebJob.Data.Access
         [J("date_day")] public string DateDay { get; set; }
         [J("date_short")] public string DateShort { get; set; }
         [J("date_long")] public string DateLong { get; set; }
-        [J("date_time")] public DateTime DateTime { get; set; }
+        [J("date_time")] public System.DateTimeOffset DateTime { get; set; }
         [J("date_formatted")] public string DateFormatted { get; set; }
         [J("times")] public List<Time> Times { get; set; }
-        [J("date")] public DateTime Date { get; set; }
-        [J("cdate")] public DateTime Cdate { get; set; }
+        [J("date")] public System.DateTimeOffset Date { get; set; }
+        [J("cdate")] public System.DateTimeOffset Cdate { get; set; }
         [J("clone")] public bool Clone { get; set; }
     }
 
@@ -110,14 +114,15 @@ namespace EPertuarWebJob.Data.Access
     {
         [J("session_id")] public string SessionId { get; set; }
         [J("version_id")] public string VersionId { get; set; }
-        [J("time")] public string PurpleTime { get; set; }
+        [J("time")] public string TimeTime { get; set; }
         [J("screen_type")] public string ScreenType { get; set; }
         [J("screen_number")] public object ScreenNumber { get; set; }
         [J("lang")] public object Lang { get; set; }
         [J("tags")] public List<Tag> Tags { get; set; }
         [J("event_info")] public object EventInfo { get; set; }
         [J("hidden")] public bool Hidden { get; set; }
-        [J("date")] public DateTime Date { get; set; }
+        [J("date")] public System.DateTimeOffset Date { get; set; }
+        [J("kids_club")] public bool KidsClub { get; set; }
     }
 
     public partial class Tag
@@ -131,17 +136,20 @@ namespace EPertuarWebJob.Data.Access
         public static Multikino FromJson(string json) => JsonConvert.DeserializeObject<Multikino>(json, MultikinoConverter.Settings);
     }
 
-    public static class MultikinoSerialize
+    public static class Serialize
     {
         public static string ToJson(this Multikino self) => JsonConvert.SerializeObject(self, MultikinoConverter.Settings);
     }
 
-    public class MultikinoConverter
+    internal class MultikinoConverter
     {
         public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
         {
             MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
             DateParseHandling = DateParseHandling.None,
+            Converters = {
+                new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
+            },
         };
     }
 }

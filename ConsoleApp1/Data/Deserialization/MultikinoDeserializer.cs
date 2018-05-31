@@ -23,7 +23,7 @@ namespace EPertuarWebJob.Data.Deserialization
         public List<MovieItem> MapMovie(Multikino from, int cinemaId)
         {
             List<MovieItem> mappedList = new List<MovieItem>();
-            foreach (MultiFilm film in from.Films)
+            foreach (MultikinoFilm film in from.Films)
             {
                 List<string> genres = new List<string>();
                 foreach (var genre in film.Genres.Names)
@@ -53,7 +53,7 @@ namespace EPertuarWebJob.Data.Deserialization
             return mappedList;
         }
 
-        private static List<ShowItem> MapShow(MultiFilm from, int cinemaId)
+        private static List<ShowItem> MapShow(MultikinoFilm from, int cinemaId)
         {
             List<ShowItem> mappedList = new List<ShowItem>();
             var today = DateTime.Today;
@@ -77,8 +77,8 @@ namespace EPertuarWebJob.Data.Deserialization
                                     {
                                         Id_Movie = Int32.Parse(from.Id),
                                         Id_Cinema = reader.GetInt32(0),
-                                        ShowDate = show.DateTime,
-                                        Start = time.PurpleTime,
+                                        ShowDate = show.DateTime.LocalDateTime,
+                                        Start = time.TimeTime,
                                         is3D = (time.ScreenType == "3D"),
                                         Language = time.Tags[0].Name,
                                         Room = -1

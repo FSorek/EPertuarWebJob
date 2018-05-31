@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ConsoleApp1.Tools;
 using EpertuarWebJob.Models;
 using EPertuarWebJob.Data.Access;
 
@@ -53,22 +54,29 @@ namespace EPertuarWebJob.Data.Deserialization
         private static List<ShowItem> MapShow(CinemaCity from, string id, int cinemaId)
         {
             List<ShowItem> mappedList = new List<ShowItem>();
-
-            foreach (Event show in from.Body.Events)
+            try
             {
-                if (show.FilmId != id) continue;
+                foreach (Event show in from.Body.Events)
+                {
+                    if (show.FilmId != id) continue;
                     mappedList.Add(new ShowItem
                     {
                         Id_Movie = Int32.Parse(id),
                         Id_Cinema = cinemaId,
                         ShowDate = show.BusinessDay,
-                        Start = show.EventDateTime.Remove(0,10),
+                        Start = show.EventDateTime.Remove(0, 10),
                         is3D = (show.AttributeIds.Contains("2d")),
                         Language = LanguageFinder(show.AttributeIds),
 
                         Room = -1
                     });
+                }
             }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "|" + e.StackTrace);
+            }
+
             return mappedList;
         }
 

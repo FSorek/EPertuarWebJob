@@ -1,8 +1,10 @@
-﻿using EpertuarWebJob.Models;
+﻿using ConsoleApp1.Tools;
+using EpertuarWebJob.Models;
 using EPertuarWebJob.Data;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -30,36 +32,34 @@ namespace EpertuarWebJob
             try
             {
                 DataRequestService request = new DataRequestService();
-                UpdateDatabase(request);
+                UpdateDatabase(request, CinemaType.cinemacity);
+                //UpdateDatabase(request, CinemaType.multikino);
             }
             catch (SqlException e)
             {
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.LineNumber);
-
+                Console.WriteLine(e.StackTrace + "|" + e.Message + "|" + e.LineNumber + "|||");
             }
         }
 
-        private static void UpdateDatabase(DataRequestService request)
+        private static void UpdateDatabase(DataRequestService request, CinemaType cinemaType)
         {
             using (SqlConnection con = new SqlConnection(builder.ConnectionString))
             {
-                Console.WriteLine("UpdataDB");
+                Console.WriteLine("UpdateDB");
                 con.Open();
 
                 string sql = "TRUNCATE TABLE Show";
                 using (SqlCommand sqlCommand = new SqlCommand(sql, con))
                     sqlCommand.ExecuteNonQuery();
 
-                sql = "select * from Cinema Where CinemaType=" + ((int)CinemaType.multikino).ToString();
+                sql = "select * from Cinema Where CinemaType=" + ((int)cinemaType).ToString();
 
-                AddMovies(sql, con, request);
+                AddMovies(sql, con, request, cinemaType);
                 con.Close();
             }
         }
 
-        private static void AddMovies(string sql, SqlConnection con, DataRequestService request)
+        private static void AddMovies(string sql, SqlConnection con, DataRequestService request, CinemaType cinemaType)
         {
             using (SqlCommand command = new SqlCommand(sql, con))
             {
@@ -67,12 +67,11 @@ namespace EpertuarWebJob
                 {
                     while (reader.Read())
                     {
-                        Console.WriteLine("Adding Movies..");
-                        request.ProvideData(CinemaType.multikino, reader.GetInt32(1));
+                        Console.WriteLine("Adding Movies.." + reader.GetString(2));
+                        request.ProvideData(cinemaType, reader.GetInt32(1));
                         //ADD MOVIES TO DB
                         foreach (var movie in request.MovieList)
                         {
-                            Console.WriteLine("Adding " + movie.Name);
                             if (movie.Original_Name == null) movie.Original_Name = movie.Name;
                             movie.Name = Regex.Replace(movie.Name, "[^a-zA-Z]", "").ToLower();
                             //Check if movie exists in DB
@@ -90,15 +89,12 @@ namespace EpertuarWebJob
             {
                 using (SqlDataReader movieReader = movieCommand.ExecuteReader())
                 {
-                    Console.WriteLine("Is it in DB?");
                     if (movieReader.HasRows)
                     {
-                        Console.WriteLine("Yes");
                         UpdateMovie(con, movie);
                     }
                     else
                     {
-                        Console.WriteLine("No");
                         AddNewMovie(con, movie);
                     }
                 }
@@ -107,7 +103,9 @@ namespace EpertuarWebJob
 
         private static void UpdateMovie(SqlConnection con, MovieItem movie)
         {
-            string sql = String.Format(@"UPDATE MOVIE SET 
+            try
+            {
+                string sql = String.Format(@"UPDATE MOVIE SET 
                                                         Name=           (COALESCE(Name,'{0}')),
                                                         Original_Name=  (COALESCE(Original_Name,'{1}')), 
                                                         Length=         (COALESCE(Length,{2})), 
@@ -125,36 +123,23 @@ namespace EpertuarWebJob
 movie.Name, movie.Original_Name, movie.Length, movie.Director, movie.Writers, movie.Stars,
 movie.Storyline, movie.Trailer, movie.Music, movie.Cinematography, movie.Rating, movie.Id_Movie, movie.Name);
 
-            SqlCommand sqlCommand = new SqlCommand(sql, con);
-            sqlCommand.ExecuteNonQuery();
+                SqlCommand sqlCommand = new SqlCommand(sql, con);
+                sqlCommand.ExecuteNonQuery();
 
-            sql = "SELECT Id_Movie from Movie Where Name='" + movie.Name + "'";
-            sqlCommand = new SqlCommand(sql, con);
-            using (SqlDataReader updateReader = sqlCommand.ExecuteReader())
-            {
-                Console.WriteLine("Movie Updated, adding shows.");
-                while (updateReader.Read())
-                {
-                    foreach (var movieShow in movie.Shows)
-                    {
-                        sql = String.Format(
-                            @"INSERT INTO Show (Id_Cinema, Id_Movie, ShowDate, Start, Room, is3D, Language)
-                                                            Values ({0},{1},'{2}','{3}','{4}',{5},'{6}')",
-                            movieShow.Id_Cinema, updateReader.GetInt32(0), movieShow.ShowDate.Date,
-                            movieShow.Start, movieShow.Room, movieShow.is3D ? 1 : 0, movieShow.Language);
-
-                        sqlCommand = new SqlCommand(sql, con);
-                        sqlCommand.ExecuteNonQuery();
-                        Console.WriteLine("Added Show from Update!");
-                    }
-                }
+                AddShowsToMovie(con, movie);
             }
-            Console.WriteLine("Updated movie!");
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + " | at UpdateMovie, skipping movie");
+            }
+            
         }
 
         private static void AddNewMovie(SqlConnection con, MovieItem movie)
         {
-            string sql = String.Format(@"INSERT INTO Movie (Name, Original_Name, Length, Director,
+            try
+            {
+                string sql = String.Format(@"INSERT INTO Movie (Name, Original_Name, Length, Director,
                                                                              Writers, Stars, Storyline, Trailer, Music, 
                                                                              Cinematography, Rating, Id_Self)
                                                         OUTPUT INSERTED.Id_Movie
@@ -162,31 +147,47 @@ movie.Storyline, movie.Trailer, movie.Music, movie.Cinematography, movie.Rating,
 movie.Name, movie.Original_Name, movie.Length, movie.Director, movie.Writers, movie.Stars,
 movie.Storyline, movie.Trailer, movie.Music, movie.Cinematography, movie.Rating, movie.Id_Movie);
 
-            SqlCommand sqlCommand = new SqlCommand(sql, con);
-            sqlCommand.ExecuteNonQuery();
+                SqlCommand sqlCommand = new SqlCommand(sql, con);
+                sqlCommand.ExecuteNonQuery();
 
-            sql = "SELECT Id_Movie from Movie Where Name='" + movie.Name + "'";
-            sqlCommand = new SqlCommand(sql, con);
-            using (SqlDataReader updateReader = sqlCommand.ExecuteReader())
+                AddShowsToMovie(con, movie);
+
+            }
+            catch(Exception e)
             {
-                Console.WriteLine("Movie Added, adding shows.");
-                while (updateReader.Read())
-                {
-                    foreach (var movieShow in movie.Shows)
-                    {
-                        sql = String.Format(
-                            @"INSERT INTO Show (Id_Cinema, Id_Movie, ShowDate, Start, Room, is3D, Language)
-                                                            Values ({0},{1},'{2}','{3}','{4}',{5},'{6}')",
-                            movieShow.Id_Cinema, updateReader.GetInt32(0), movieShow.ShowDate.Date,
-                            movieShow.Start, movieShow.Room, movieShow.is3D ? 1 : 0, movieShow.Language);
+                Console.WriteLine(e.Message + " | at AddNewMovie, skipping movie");
+            }
+            
+        }
 
-                        sqlCommand = new SqlCommand(sql, con);
-                        sqlCommand.ExecuteNonQuery();
+        private static void AddShowsToMovie(SqlConnection con, MovieItem movie)
+        {
+            try
+            {
+                string sql = "SELECT Id_Movie from Movie Where Name='" + movie.Name + "'";
+                SqlCommand sqlCommand = new SqlCommand(sql, con);
+                using (SqlDataReader updateReader = sqlCommand.ExecuteReader())
+                {
+                    while (updateReader.Read())
+                    {
+                        foreach (var movieShow in movie.Shows)
+                        {
+                            sql = String.Format(
+                                @"INSERT INTO Show (Id_Cinema, Id_Movie, ShowDate, Start, Room, is3D, Language)
+                                                            Values ({0},{1},'{2}','{3}','{4}',{5},'{6}')",
+                                movieShow.Id_Cinema, updateReader.GetInt32(0), null,
+                                movieShow.Start, movieShow.Room, movieShow.is3D ? 1 : 0, movieShow.Language);
+
+                            sqlCommand = new SqlCommand(sql, con);
+                            sqlCommand.ExecuteNonQuery();
+                        }
                     }
                 }
             }
-
-            Console.WriteLine("Added movie!");
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message + " | Skipped adding shows to " + movie.Original_Name + "||" + e.StackTrace);
+            }
         }
     }
 }
