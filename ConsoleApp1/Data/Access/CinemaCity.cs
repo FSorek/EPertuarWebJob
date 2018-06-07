@@ -22,7 +22,7 @@ namespace EPertuarWebJob.Data.Access
         [J("filmId")] public string FilmId { get; set; }
         [J("cinemaId")] public string CinemaId { get; set; }
         [J("businessDay")] public DateTime BusinessDay { get; set; }
-        [J("eventDateTime")] public string EventDateTime { get; set; }
+        [J("eventDateTime")] public DateTime EventDateTime { get; set; }
         [J("attributeIds")] public string[] AttributeIds { get; set; }
         [J("bookingLink")] public string BookingLink { get; set; }
         [J("soldOut")] public bool SoldOut { get; set; }

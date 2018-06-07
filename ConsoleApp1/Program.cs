@@ -32,8 +32,18 @@ namespace EpertuarWebJob
             try
             {
                 DataRequestService request = new DataRequestService();
+
+                using (SqlConnection con = new SqlConnection(builder.ConnectionString))
+                using (SqlCommand sqlCommand = new SqlCommand("TRUNCATE TABLE Show", con))
+                {
+                    con.Open();
+                    sqlCommand.ExecuteNonQuery();
+                    con.Close();
+                }
+                    
+
                 UpdateDatabase(request, CinemaType.cinemacity);
-                //UpdateDatabase(request, CinemaType.multikino);
+                UpdateDatabase(request, CinemaType.multikino);
             }
             catch (SqlException e)
             {
@@ -48,12 +58,7 @@ namespace EpertuarWebJob
                 Console.WriteLine("UpdateDB");
                 con.Open();
 
-                string sql = "TRUNCATE TABLE Show";
-                using (SqlCommand sqlCommand = new SqlCommand(sql, con))
-                    sqlCommand.ExecuteNonQuery();
-
-                sql = "select * from Cinema Where CinemaType=" + ((int)cinemaType).ToString();
-
+                var sql = "select * from Cinema Where CinemaType=" + ((int)cinemaType).ToString();
                 AddMovies(sql, con, request, cinemaType);
                 con.Close();
             }
@@ -175,7 +180,7 @@ movie.Storyline, movie.Trailer, movie.Music, movie.Cinematography, movie.Rating,
                             sql = String.Format(
                                 @"INSERT INTO Show (Id_Cinema, Id_Movie, ShowDate, Start, Room, is3D, Language)
                                                             Values ({0},{1},'{2}','{3}','{4}',{5},'{6}')",
-                                movieShow.Id_Cinema, updateReader.GetInt32(0), null,
+                                movieShow.Id_Cinema, updateReader.GetInt32(0), movieShow.ShowDate,
                                 movieShow.Start, movieShow.Room, movieShow.is3D ? 1 : 0, movieShow.Language);
 
                             sqlCommand = new SqlCommand(sql, con);

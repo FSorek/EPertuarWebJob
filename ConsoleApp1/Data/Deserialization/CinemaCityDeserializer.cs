@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using ConsoleApp1.Tools;
+using EpertuarWebJob;
 using EpertuarWebJob.Models;
 using EPertuarWebJob.Data.Access;
 
@@ -54,6 +56,23 @@ namespace EPertuarWebJob.Data.Deserialization
         private static List<ShowItem> MapShow(CinemaCity from, string id, int cinemaId)
         {
             List<ShowItem> mappedList = new List<ShowItem>();
+
+            String sql = String.Format("select Id_Cinema from Cinema Where Id_Self = {0} AND CinemaType = {1}", cinemaId, (int)CinemaType.cinemacity);
+            SqlConnection con = new SqlConnection(Program.builder.ConnectionString);
+            con.Open();
+            var IdCinema = 0;
+            using (SqlCommand command = new SqlCommand(sql, con))
+            {
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        IdCinema = reader.GetInt32(0);
+                    }
+                }
+            }
+                        
+
             try
             {
                 foreach (Event show in from.Body.Events)
@@ -61,10 +80,10 @@ namespace EPertuarWebJob.Data.Deserialization
                     if (show.FilmId != id) continue;
                     mappedList.Add(new ShowItem
                     {
-                        Id_Movie = Int32.Parse(id),
-                        Id_Cinema = cinemaId,
+                        Id_Movie = 0,
+                        Id_Cinema = IdCinema,
                         ShowDate = show.BusinessDay,
-                        Start = show.EventDateTime.Remove(0, 10),
+                        Start = show.EventDateTime.ToShortTimeString(),
                         is3D = (show.AttributeIds.Contains("2d")),
                         Language = LanguageFinder(show.AttributeIds),
 
